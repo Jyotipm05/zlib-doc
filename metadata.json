@@ -1,0 +1,6 @@
+{
+  "name": "zlib Docs",
+  "description": "A modern, responsive documentation website and interactive playground for the zlib compression library, featuring full API search and algorithm visualization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
