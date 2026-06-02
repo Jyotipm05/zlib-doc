@@ -12,7 +12,7 @@ import Playground from './Playground';
 function highlightCode(code: string, lang: string): ReactNode {
   const language = lang.toLowerCase().trim();
   if (language === 'cpp' || language === 'c' || language === 'c++') {
-    const regex = /(\/\/.*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(#\w+)|\b(class|public|private|protected|virtual|explicit|delete|noexcept|operator|this|return|throw|try|catch|const|constexpr|extern|inline|using|struct|union|typedef|typename|template|new|reinterpret_cast|static_cast|const_cast|dynamic_cast|void|bool|sizeof|nullptr|while|do|if|else|for|case|switch|break|continue|default|namespace|override)\b|\b(z_stream|z_streamp|Bytef|Byte|voidpf|voidpc|gzFile|gz_header|gz_headerp|uLong|uLongf|uInt|size_t|uint8_t|uint32_t|int|char|float|double|std::string|std::vector|std::string_view|std::span|std::byte|std::unique_ptr|std::remove_pointer_t|std::filesystem::path|std::expected|ZlibStatus)\b|\b(deflateInit|deflate|deflateEnd|inflateInit|inflate|inflateEnd|deflateInit2|inflateInit2|deflateSetHeader|compress|uncompress|compressBound|gzopen|gzread|gzwrite|gzclose|adler32|crc32|malloc|free|main|printf|memset|memcpy|strlen|strcmp)\b|\b(0x[0-9a-fA-F]+|\d+L?|\d+(?:\.\d+)?)\b/g;
+    const regex = /(\/\/.*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(#include\s+<[^>]+>|#include\s+"[^"]+"|#\w+)|\b(class|public|private|protected|virtual|explicit|delete|noexcept|operator|this|return|throw|try|catch|const|constexpr|extern|inline|using|struct|union|typedef|typename|template|new|reinterpret_cast|static_cast|const_cast|dynamic_cast|void|bool|sizeof|nullptr|while|do|if|else|for|case|switch|break|continue|default|namespace|override)\b|\b(z_stream|z_streamp|Bytef|Byte|voidpf|voidpc|gzFile|gz_header|gz_headerp|uLong|uLongf|uInt|size_t|uint8_t|uint32_t|int|char|float|double|std::string|std::vector|std::string_view|std::span|std::byte|std::unique_ptr|std::remove_pointer_t|std::filesystem::path|std::expected|ZlibStatus)\b|\b(deflateInit|deflate|deflateEnd|inflateInit|inflate|inflateEnd|deflateInit2|inflateInit2|deflateSetHeader|compress|uncompress|compressBound|gzopen|gzread|gzwrite|gzclose|adler32|crc32|malloc|free|main|printf|memset|memcpy|strlen|strcmp)\b|\b(0x[0-9a-fA-F]+|\d+L?|\d+(?:\.\d+)?)\b|\b(\w+)\s*(?=\()/g;
 
     const parts: (string | ReactNode)[] = [];
     let lastIndex = 0;
@@ -25,9 +25,9 @@ function highlightCode(code: string, lang: string): ReactNode {
       }
 
       const matchedText = match[0];
-      // Find which group matched (index 1 to 7)
+      // Find which group matched (index 1 to 8)
       let matchType = 0;
-      for (let g = 1; g <= 7; g++) {
+      for (let g = 1; g <= 8; g++) {
         if (match[g] !== undefined) {
           matchType = g;
           break;
@@ -37,7 +37,7 @@ function highlightCode(code: string, lang: string): ReactNode {
       switch (matchType) {
         case 1:
           // Comment
-          parts.push(<span key={match.index} className="text-zinc-550 font-normal italic">{matchedText}</span>);
+          parts.push(<span key={match.index} className="text-zinc-500 font-normal italic">{matchedText}</span>);
           break;
         case 2:
           // String
@@ -45,7 +45,21 @@ function highlightCode(code: string, lang: string): ReactNode {
           break;
         case 3:
           // Preprocessor
-          parts.push(<span key={match.index} className="text-amber-500 font-bold">{matchedText}</span>);
+          if (matchedText.startsWith('#include')) {
+            const headerMatch = matchedText.match(/(#include\s+)(<[^>]+>|"[^"]+")/);
+            if (headerMatch) {
+              parts.push(
+                <span key={match.index}>
+                  <span className="text-amber-500 font-bold">{headerMatch[1]}</span>
+                  <span className="text-emerald-400 font-semibold">{headerMatch[2]}</span>
+                </span>
+              );
+            } else {
+              parts.push(<span key={match.index} className="text-amber-500 font-bold">{matchedText}</span>);
+            }
+          } else {
+            parts.push(<span key={match.index} className="text-amber-500 font-bold">{matchedText}</span>);
+          }
           break;
         case 4:
           // Keyword
@@ -56,12 +70,16 @@ function highlightCode(code: string, lang: string): ReactNode {
           parts.push(<span key={match.index} className="text-sky-400 font-semibold">{matchedText}</span>);
           break;
         case 6:
-          // Function
-          parts.push(<span key={match.index} className="text-teal-350 font-semibold">{matchedText}</span>);
+          // Function (specific builtins)
+          parts.push(<span key={match.index} className="text-yellow-300 font-normal">{matchedText}</span>);
           break;
         case 7:
           // Number
           parts.push(<span key={match.index} className="text-purple-400 font-normal">{matchedText}</span>);
+          break;
+        case 8:
+          // General function call
+          parts.push(<span key={match.index} className="text-yellow-300 font-normal">{matchedText}</span>);
           break;
         default:
           parts.push(matchedText);
@@ -99,7 +117,7 @@ function highlightCode(code: string, lang: string): ReactNode {
         parts.push(<span key={match.index} className="text-sky-400 font-semibold">{match[2]}</span>);
       } else if (match[3]) {
         // Comment
-        parts.push(<span key={match.index} className="text-zinc-550 italic">{matchedText}</span>);
+        parts.push(<span key={match.index} className="text-zinc-500 italic">{matchedText}</span>);
       } else if (match[4]) {
         // String argument
         parts.push(<span key={match.index} className="text-emerald-400 font-normal">{matchedText}</span>);
@@ -133,7 +151,7 @@ function highlightCode(code: string, lang: string): ReactNode {
       const matchedText = match[0];
       if (match[1]) {
         // Comment
-        parts.push(<span key={match.index} className="text-zinc-550 italic">{matchedText}</span>);
+        parts.push(<span key={match.index} className="text-zinc-500 italic">{matchedText}</span>);
       } else if (match[2]) {
         // String
         parts.push(<span key={match.index} className="text-emerald-400 font-normal">{matchedText}</span>);
